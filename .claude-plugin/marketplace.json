@@ -1,0 +1,23 @@
+{
+  "name": "visual-ux-review-toolkit",
+  "owner": {
+    "name": "Jeremy Teo"
+  },
+  "metadata": {
+    "description": "Adversarial UI/UX review skills for Claude Code — per-screen visual review and journey-level flow walkthroughs, with annotated HTML/PDF reports.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "ui-ux-review",
+      "description": "Two complementary review skills: visual-ux-review (adversarial per-screen visual/geometry/accessibility critique at 5 breakpoints, with annotated HTML/PDF reports) and ux-flow-walkthrough (naive-user journey testing — goal-directed, free-explore, and exhaustive auto-explore modes).",
+      "version": "0.1.0",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/visual-ux-review",
+        "./skills/ux-flow-walkthrough"
+      ]
+    }
+  ]
+}

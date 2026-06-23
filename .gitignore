@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Generated review artifacts (don't commit reports/screenshots)
+ux-report/
+report.html
+report.pdf
+report-print.html
+findings.json
+review-*.png
+*-annotated.png
+_crops/
+_pdfpages/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

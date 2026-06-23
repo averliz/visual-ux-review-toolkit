@@ -1,0 +1,108 @@
+# Visual UX Review Toolkit
+
+Adversarial **UI/UX review skills for [Claude Code](https://claude.com/claude-code)**. Point them at a running app and they review how it actually *looks* and *works* — not by reading the diff, but by driving a real browser, measuring the rendered page, and judging it as a skeptical designer and a confused first-time user would.
+
+Two complementary skills:
+
+| Skill | Lens | What it does |
+|-------|------|--------------|
+| **`visual-ux-review`** | Per-screen (does it *look* right?) | Screenshots a page at 5 breakpoints, measures every interactive element's geometry, audits font sizes and contrast, clicks every sort/filter/tab to catch layout jumps, then adversarially critiques the rendered UI. Emits an **annotated HTML/PDF report** with boxes drawn on the screenshots. |
+| **`ux-flow-walkthrough`** | Journey (does it *make sense*?) | Drives the app as a clueless first-timer, one click at a time, running an automated **cognitive walkthrough** to find friction, dead-ends, and confusing flows. Three modes: goal-directed, free-explore, and exhaustive auto-explore. |
+
+They're deliberately separate — a per-screen geometry critique and a click-through journey test are different jobs. Together they cover the full UI/UX surface.
+
+> Code review reads the diff; it can't see that a back arrow renders at 22px, that chips reflow when clicked, or that a first-timer can't find the "next" button. These skills close that gap.
+
+---
+
+## Requirements
+
+- **Claude Code** with a browser MCP — either [Playwright MCP](https://github.com/microsoft/playwright-mcp) (preferred) or the [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp).
+- A **running app** reachable at a URL. Any framework, any port (Vite, Next.js/CRA, Angular, Vue/Nuxt, a deployed `https://` URL — the skills only need a URL).
+- For the **annotated reports** (optional): Python 3.8+ with [Pillow](https://pypi.org/project/Pillow/) for annotated PNGs, and Chrome or Edge for PDF export (with [reportlab](https://pypi.org/project/reportlab/) as a no-browser fallback).
+
+## Install
+
+This repo is a Claude Code **plugin marketplace**. Install with two commands:
+
+```text
+/plugin marketplace add averliz/visual-ux-review-toolkit
+/plugin install ui-ux-review@visual-ux-review-toolkit
+```
+
+**Try it locally first**, before pushing — point the marketplace at the local folder:
+
+```text
+/plugin marketplace add /absolute/path/to/visual-ux-review-toolkit
+/plugin install ui-ux-review@visual-ux-review-toolkit
+```
+
+Both skills are then available; invoke them by name (`/visual-ux-review`, `/ux-flow-walkthrough`) or just describe what you want.
+
+## Usage
+
+### Per-screen visual review
+
+```text
+review the UI of /settings on localhost:3000 — the buttons feel too small on mobile
+```
+
+It captures 5 breakpoints, measures geometry, runs the checks, critiques the screenshots, and offers an annotated report. Point it at a PR and it reviews just the changed screens:
+
+```text
+run /visual-ux-review on the screens PR #42 changed
+```
+
+### Naive-user flow walkthrough
+
+```text
+# goal-directed
+walk through the sign-up flow as a confused first-time user and tell me where they'd get stuck
+
+# free-explore
+click around localhost:3000 like a newcomer and find what's confusing
+
+# exhaustive / adversarial
+do a full auto-explore of the app — try every flow, mis-submit forms, hit back mid-flow — and report every dead-end
+```
+
+### As a review step in a workflow
+
+Both are built to slot into a review chain after code review — where code review can't see spatial/journey problems:
+
+```text
+For PR #42: run /simplify, then /code-review and fix issues,
+then /visual-ux-review and address findings,
+then /ux-flow-walkthrough on the main flow,
+then test the e2e flow with Playwright.
+```
+
+## Reports
+
+`visual-ux-review` can emit a shareable report in three forms from one findings file (`ux-flow-walkthrough` can reuse the same generator with journey steps as pages):
+
+- **`report.html`** — interactive: page switcher, breakpoint tabs, bounding-box overlays, per-finding 👍/👎 + comments, "Export feedback" → JSON.
+- **`report.pdf`** — shareable: cover + summary, then each finding as a card with a **focused, captioned crop** beside its text (rendered via headless Chrome/Edge, reportlab fallback).
+- **`<page>-<bp>px-annotated.png`** — boxes burned into the screenshots.
+
+```bash
+python skills/visual-ux-review/scripts/generate_report.py \
+  --findings findings.json --screenshots-dir . --out-dir ux-report
+```
+
+See [`skills/visual-ux-review/references/report-schema.md`](skills/visual-ux-review/references/report-schema.md) for the findings format (single-page and multi-page).
+
+## How it works
+
+- **No framework awareness.** Capture is DOM-level (`querySelectorAll` / `getComputedStyle` / `getBoundingClientRect`) run in the browser against the rendered page — identical whether it came from Vite, Angular, or server-rendered HTML.
+- **Mechanical + perceptual.** Geometry, font sizes, overflow, and layout-shift are measured deterministically; the subjective "does this look/feel right" is a vision/persona pass on top.
+- **Adversarial by default.** `visual-ux-review` assumes every pixel is suspect; `ux-flow-walkthrough` assumes the user is confused. That's where the real findings come from.
+
+## Compatibility & roadmap
+
+- **v0.1 — Claude Code only.** Plugins are a Claude Code construct, and the skills drive Claude Code's browser MCPs.
+- The `SKILL.md` files are plain markdown and portable; **other harnesses** (Codex, Gemini, Copilot, …) are planned for a later iteration.
+
+## License
+
+[MIT](LICENSE) © Jeremy Teo
