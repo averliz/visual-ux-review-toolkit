@@ -114,8 +114,11 @@ def generate_pngs(pages: list, shots_dir: Path, out_dir: Path) -> dict:
     for page in pages:
         by_bp = {}
         for f in page["findings"]:
-            for bp in str(f.get("breakpoint", "")).split(","):
-                by_bp.setdefault(bp.strip(), []).append(f)
+            # A box is valid only for the one breakpoint it was measured at (the first
+            # listed). Drawing it on other breakpoints would misplace it, since the same
+            # element sits at a different position per breakpoint.
+            primary_bp = str(f.get("breakpoint", "")).split(",")[0].strip()
+            by_bp.setdefault(primary_bp, []).append(f)
         page_out = {}
         for bp, fname in (page.get("screenshots") or {}).items():
             src = shots_dir / fname
@@ -282,10 +285,13 @@ function selectBp(bp){
   renderPanel();
 }
 function inBp(f){ return String(f.breakpoint).split(",").map(s=>s.trim()).includes(currentBp); }
+function primaryBp(f){ return String(f.breakpoint).split(",")[0].trim(); }
 function renderBoxes(){
   const img=document.getElementById("shot"), overlay=document.getElementById("overlay");
   const nw=img.naturalWidth, nh=img.naturalHeight; overlay.innerHTML="";
-  page().findings.filter(f=>f.box && inBp(f)).forEach(f=>{
+  // Draw a box only on the breakpoint it was measured at (the first listed) — an element
+  // is at a different position per breakpoint, so reusing one box elsewhere misplaces it.
+  page().findings.filter(f=>f.box && primaryBp(f)===currentBp).forEach(f=>{
     const d=document.createElement("div"); d.className="box"; d.id="box-"+f.id;
     d.style.left=(f.box.x/nw*100)+"%"; d.style.top=(f.box.y/nh*100)+"%";
     d.style.width=(f.box.w/nw*100)+"%"; d.style.height=(f.box.h/nh*100)+"%";

@@ -84,8 +84,8 @@ For multi-page, `url`, `screenshots`, and `findings` move inside each `pages[]` 
 | `findings[].severity` | yes | `critical` / `high` / `medium` / `low` |
 | `findings[].title` | yes | One-line summary |
 | `findings[].element` | yes | What element |
-| `findings[].breakpoint` | yes | Primary breakpoint for the box, as a string. Can be comma-separated (`"320,375"`) — the box is drawn on each listed breakpoint's screenshot |
-| `findings[].box` | optional | `{x, y, w, h}` in **document-relative CSS pixels** (NOT viewport-relative — see below). Omit for findings with no single element (e.g. "overall spacing rhythm") |
+| `findings[].breakpoint` | yes | Breakpoint(s) the finding applies to, as a string. **If the finding has a `box`, list a SINGLE breakpoint** (the one the box was measured at) — the box is drawn only on the first listed breakpoint, because an element sits at a different position per breakpoint. Boxless findings may list several (`"320,375"`) |
+| `findings[].box` | optional | `{x, y, w, h}` in **document-relative CSS pixels** — the **real, measured** `getBoundingClientRect` of that exact element (NOT viewport-relative, NOT estimated). A guessed box lands on the wrong element. Omit it for findings with no single element (e.g. "overall spacing rhythm") — a text-only finding beats a wrong box |
 | `findings[].issue` | yes | What's wrong |
 | `findings[].evidence` | optional | Measurement or observation, rendered as code |
 | `findings[].fix` | optional | Concrete remediation |
