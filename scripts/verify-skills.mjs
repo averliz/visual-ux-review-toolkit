@@ -16,6 +16,7 @@ if (readFileSync(A).equals(readFileSync(B))) console.log('ok: browser-tools.md c
 else fail(`${A} and ${B} differ — keep them byte-identical`);
 
 try {
+  // execSync via shell is deliberate: on Windows npx is npx.cmd, which execFileSync('npx', …) can't resolve. Command is a fixed constant — no injection surface.
   const out = execSync('npx -y skills@latest add . --list', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   for (const s of SKILLS) out.includes(s) ? console.log(`ok: npx skills lists ${s}`) : fail(`npx skills did not list ${s}`);
 } catch (e) {
