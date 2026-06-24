@@ -3,7 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-GEN = Path("skills/visual-ux-review/scripts/generate_report.py")
+GEN = Path(__file__).resolve().parents[1] / "skills" / "visual-ux-review" / "scripts" / "generate_report.py"
 
 def _run(tmp_path: Path, data: dict) -> Path:
     findings = tmp_path / "findings.json"
@@ -27,4 +27,6 @@ def test_driver_rendered_when_present(tmp_path):
 
 def test_no_driver_is_backcompat(tmp_path):
     out = _run(tmp_path, _data())  # no driver key
+    md = (out / "report.md").read_text(encoding="utf-8")
     assert (out / "report.md").exists()  # still generates, no crash
+    assert "**Driver:**" not in md       # absent driver => no provenance line
