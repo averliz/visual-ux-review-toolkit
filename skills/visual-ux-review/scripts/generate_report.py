@@ -355,9 +355,12 @@ def generate_html(data: dict, pages: list, images_per_page: list, out_path: Path
                "pages": [{"name": p["name"], "url": p.get("url", ""), "slug": p["slug"],
                           "verdict": p["verdict"], "summary": p["summary"],
                           "findings": p["findings"]} for p in pages]}
+    ts = data.get("timestamp", "")
+    if data.get("driver"):
+        ts = f"{ts} · driver: {data['driver']}"
     html = (HTML_TEMPLATE
             .replace("__TITLE__", data.get("title", "Visual UX Review"))
-            .replace("__TIMESTAMP__", data.get("timestamp", ""))
+            .replace("__TIMESTAMP__", ts)
             .replace("__VERDICT_CLASS__", "ship" if verdict == "SHIP" else ("block" if verdict == "BLOCK" else "fixes"))
             .replace("__VERDICT__", verdict)
             .replace("__DATA__", json.dumps(payload))
@@ -373,6 +376,8 @@ def generate_md(data: dict, pages: list, png_map: dict, out_path: Path) -> None:
     L.append(f"# {data.get('title', 'Visual UX Review')}\n")
     L.append(f"**Date:** {data.get('timestamp', '')}  ")
     L.append(f"**Overall verdict:** {data['verdict']}\n")
+    if data.get("driver"):
+        L.append(f"**Driver:** {data['driver']}\n")
     if len(pages) > 1:
         L.append("| Page | Verdict | Critical | High | Medium | Low |")
         L.append("|------|---------|----------|------|--------|-----|")
