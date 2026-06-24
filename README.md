@@ -23,21 +23,29 @@ They're deliberately separate — a per-screen geometry critique and a click-thr
 
 ## Install
 
-This repo is a Claude Code **plugin marketplace**. Install with two commands:
+### Any agent (Claude Code, Codex, Cursor, Gemini, OpenCode, …)
+
+```text
+npx skills add averliz/visual-ux-review-toolkit
+```
+
+Installs both skills via the open [`npx skills`](https://github.com/vercel-labs/skills) tool. Add
+`--skill visual-ux-review` (or `ux-flow-walkthrough`) to install just one. Tested with `skills`
+1.5.13.
+
+### Claude Code plugin (native slash commands + marketplace)
 
 ```text
 /plugin marketplace add averliz/visual-ux-review-toolkit
 /plugin install ui-ux-review@visual-ux-review-toolkit
 ```
 
-**Try it locally first**, before pushing — point the marketplace at the local folder:
+Either way, invoke by name (`visual-ux-review`, `ux-flow-walkthrough`) or just describe what you want.
 
-```text
-/plugin marketplace add /absolute/path/to/visual-ux-review-toolkit
-/plugin install ui-ux-review@visual-ux-review-toolkit
-```
-
-Both skills are then available; invoke them by name (`/visual-ux-review`, `/ux-flow-walkthrough`) or just describe what you want.
+> **Requires a browser driver.** The skills measure a live page via a browser tool — Playwright MCP
+> recommended (`npx @playwright/mcp@latest`), Chrome DevTools MCP also works. With no driver they
+> stop and tell you how to enable one; they never fabricate measurements. See each skill's
+> `references/browser-tools.md`.
 
 ## Usage
 
@@ -98,10 +106,14 @@ See [`skills/visual-ux-review/references/report-schema.md`](skills/visual-ux-rev
 - **Mechanical + perceptual.** Geometry, font sizes, overflow, and layout-shift are measured deterministically; the subjective "does this look/feel right" is a vision/persona pass on top.
 - **Adversarial by default.** `visual-ux-review` assumes every pixel is suspect; `ux-flow-walkthrough` assumes the user is confused. That's where the real findings come from.
 
-## Compatibility & roadmap
+## Compatibility
 
-- **v0.1 — Claude Code only.** Plugins are a Claude Code construct, and the skills drive Claude Code's browser MCPs.
-- The `SKILL.md` files are plain markdown and portable; **other harnesses** (Codex, Gemini, Copilot, …) are planned for a later iteration.
+- **Harness-agnostic.** Installable on any agent via `npx skills`; the skill bodies are written in a
+  neutral browser-**capability** vocabulary (navigate / set-viewport / evaluate-js / screenshot /
+  accessibility-snapshot / click) mapped per harness in each skill's `references/browser-tools.md`.
+- **Driver:** Playwright MCP recommended (works the same on every harness); Chrome DevTools MCP
+  mappings are best-effort. No driver ⇒ the skill stops cleanly rather than guessing.
+- The Claude Code plugin path remains for native slash commands.
 
 ## License
 
