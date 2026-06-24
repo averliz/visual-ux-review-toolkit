@@ -13,17 +13,32 @@ It operates **adversarially** — the default posture is "assume it's broken, hu
 
 ## Prerequisites
 
-At least one browser MCP must be available:
-- **Playwright MCP** (`mcp__plugin_playwright_playwright__*` — preferred, supports `boxes: true`)
-- **Chrome DevTools MCP** (`mcp__chrome-devtools__*` — has `lighthouse_audit`)
+This skill drives a live page through six **capabilities** — `navigate`, `set-viewport`,
+`evaluate-js-in-page`, `screenshot` (full-page PNG), `accessibility-snapshot`, `click` — mapped to
+whatever browser tool your harness exposes. Playwright MCP is the recommended default
+(`npx @playwright/mcp@latest`); Chrome DevTools MCP also works. See
+[`references/browser-tools.md`](references/browser-tools.md) for the mapping table and how to
+enable a driver.
 
 The page under review must be running and accessible at a URL. **Any framework on any port works** — the skill just navigates to the URL you give it (Vite `:5173`, Next.js/CRA `:3000`, Angular `:4200`, Vue/Nuxt `:8080`, a static server, a deployed `https://` URL — whatever). Nothing keys off the port or framework. To start it, use the project's own dev workflow — discover it rather than assuming: check for a `LOCAL_DEV.md` or `CONTRIBUTING.md`, then the README, `package.json`/`Makefile` scripts, or a `docker-compose` file.
+
+## Before you start — driver conformance (MANDATORY)
+
+Do this ONCE, up front. Using [`references/browser-tools.md`](references/browser-tools.md), detect
+which browser tool your harness exposes and fill the **conformance checklist** there — record the
+concrete tool for each of the six capabilities, confirming `set-viewport` is non-destructive,
+`evaluate-js-in-page` returns data, and `screenshot` is full-page PNG.
+
+If any required capability is missing or unverified, emit **only** the `BROWSER_DRIVER_MISSING`
+block from that file and **stop**: no findings, no scores, no coordinates, **no verdict**. This skill
+measures a real rendered page — when it cannot, the correct output is "couldn't run," never an
+estimated review.
 
 ## Where this runs in a workflow
 
 This skill is built to be dropped into a review chain as an explicit step — typically **after** a code review, because code review reads the diff and can't see spatial/visual problems (a 22px tap target, chips that reflow on click, a header that wraps badly). A user will often invoke it mid-workflow, e.g.:
 
-> "For PR #42, run `/simplify`, then `/code-review` and fix issues, then **`/visual-ux-review`** and address any findings, then test the e2e flow with Playwright."
+> "For PR #42, run your cleanup and simplify pass, then your code review and fix issues, then **this visual review** and address any findings, then test the e2e flow."
 
 So assume the code review is already done; your job is the visual pass on the screens that changed, then **report the findings and fix them** (this runs as part of a review-and-fix flow, not a read-only audit).
 
@@ -68,9 +83,9 @@ Take screenshots, geometry, and font/contrast data at **all 5 breakpoints**:
 
 For **each** breakpoint:
 
-1. **Resize** viewport to target width × 900px height
-2. **Full-page screenshot** → save as `review-{width}px.png`
-3. **Interactive element geometry** — run via `browser_evaluate`. Coordinates are **document-relative** (`+ scrollX/Y`) so they map onto the full-page screenshot for report annotation:
+1. **Resize** the viewport to target width × 900px height via the **set-viewport** capability (must not reset page state)
+2. **Full-page screenshot** (PNG) via the **screenshot** capability → save as `review-{width}px.png`
+3. **Interactive element geometry** — run via the **evaluate-js-in-page** capability. Coordinates are **document-relative** (`+ scrollX/Y`) so they map onto the full-page screenshot for report annotation:
    ```js
    () => {
      const els = document.querySelectorAll('a, button, input, select, textarea, [role="button"], [role="link"], [role="tab"], [tabindex]');
@@ -89,7 +104,7 @@ For **each** breakpoint:
      return results;
    }
    ```
-4. **Font size audit** — run via `browser_evaluate`:
+4. **Font size audit** — run via the **evaluate-js-in-page** capability:
    ```js
    () => {
      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -111,7 +126,7 @@ For **each** breakpoint:
      return issues;
    }
    ```
-5. **Overflow check** — run via `browser_evaluate`:
+5. **Overflow check** — run via the **evaluate-js-in-page** capability:
    ```js
    () => ({
      scrollWidth: document.documentElement.scrollWidth,
@@ -119,7 +134,7 @@ For **each** breakpoint:
      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
    })
    ```
-6. **Lighthouse audit** (if Chrome DevTools MCP available): `lighthouse_audit` with `device: mobile` for 320/375px, `device: desktop` for the rest. If unavailable, record `Lighthouse: NOT AVAILABLE`.
+6. **Lighthouse audit** (only if your driver exposes a Lighthouse capability — see browser-tools.md): run with `device: mobile` for 320/375px, `device: desktop` for the rest. If unavailable, record `Lighthouse: NOT AVAILABLE`.
 
 **Completion gate:** Confirm data collected at ALL 5 breakpoints before proceeding:
 ```
@@ -262,6 +277,7 @@ Every finding must reference a specific element, breakpoint, and evidence (measu
 - High: N findings
 - Medium: N findings
 - Low: N findings
+- **Driver:** [the browser tool used, from your conformance checklist]
 - **Verdict: SHIP / SHIP WITH FIXES / BLOCK**
 
 ### Critical Findings
@@ -333,7 +349,7 @@ After presenting the inline report, offer to generate a visual report with bound
 ## Key Technical Notes
 
 - **axe-core `target-size` is OFF by default.** Enable with `.withTags(['wcag22aa'])` or `.withRules(['target-size'])`.
-- **`browser_snapshot(boxes: true)`** returns `[x, y, width, height]` in CSS pixels.
-- **`boundingBox()` returns null if element is off-viewport** — scroll into view before measuring.
+- If your driver returns element boxes alongside the accessibility snapshot, they're `[x, y, width, height]` in CSS pixels (the exact tool is in browser-tools.md).
+- An element's bounding box may be null/empty when it's off-viewport — scroll it into view before measuring.
 - **Cross-OS font rendering** differs — this skill uses vision critique (semantic), not pixel comparison.
 - **Read `references/ux-heuristics.md`** for the full threshold table and severity decision tree.
