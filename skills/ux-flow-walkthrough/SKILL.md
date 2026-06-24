@@ -15,9 +15,18 @@ It operates **adversarially** — it doesn't use insider knowledge of where thin
 
 ## Prerequisites
 
-At least one browser MCP must be available:
-- **Playwright MCP** (`mcp__plugin_playwright_playwright__*` — preferred) — for navigating, clicking, typing, and screenshots.
-- **Chrome DevTools MCP** (`mcp__chrome-devtools__*`) — alternative driver.
+This skill drives a live app through a small set of **capabilities** — `navigate`, `click`,
+`accessibility-snapshot`, `screenshot`, `evaluate-js-in-page`, `set-viewport` — mapped to whatever
+browser tool your harness exposes. Playwright MCP is the recommended default
+(`npx @playwright/mcp@latest`). See [`references/browser-tools.md`](references/browser-tools.md) for
+the mapping and how to enable a driver.
+
+## Before you start — driver conformance (MANDATORY)
+
+Once, up front: using [`references/browser-tools.md`](references/browser-tools.md), detect your
+harness's browser tool and fill the conformance checklist. If a required capability is missing or
+unverified, emit **only** the `BROWSER_DRIVER_MISSING` block and **stop** — no journey, no findings,
+no verdict. A walkthrough with no real browser is not a walkthrough.
 
 The app must be running and reachable at a URL. **Any framework on any port** works — the skill just drives the URL you give it. To start it, use the project's own dev workflow (a `LOCAL_DEV.md`/`CONTRIBUTING.md` if present, else the README, `package.json`/`Makefile` scripts, or a compose file). Reviews can also run against a deployed URL.
 
@@ -46,7 +55,7 @@ Given just an entry URL, wander like a curious newcomer: follow the most promine
 ### Mode C — Full auto-explore (exhaustive + adversarial)
 Systematically traverse the reachable state space to surface unknown-unknowns. This is the "full-fledged" pass — bounded so it stays tractable:
 - **Budget:** stop after `MAX_STEPS` (default 60) or `MAX_DEPTH` (default 8) from the entry point, whichever first. State the budget in the report.
-- **State de-dup:** track visited states by a signature (normalized URL + a hash of the visible interactive elements). Don't re-explore a state you've already covered; `log()` when you skip one.
+- **State de-dup:** track visited states by a signature (normalized URL + a hash of the visible interactive elements). Don't re-explore a state you've already covered; **note** each skip in the report.
 - **Coverage:** from each new state, enumerate interactive elements and visit unexplored ones breadth-first, so you get wide coverage before deep.
 - **Adversarial probes** (the naive user makes mistakes — try them): submit forms empty and with junk input; hit the browser Back button mid-flow; double-click submit; open something then dismiss it; refresh mid-flow; follow a "destructive" looking action to the confirmation (don't confirm). Record what happens.
 - **Safety:** never confirm destructive/irreversible actions (delete, pay, send) — stop at the confirmation and note it. Don't spam external sends. Treat any real-money or real-comms action as a hard stop.
@@ -125,8 +134,15 @@ Narrate the journey as an ordered path, with friction called out where it happen
 - Not reached / blocked: [list with why]
 ```
 
-### Optional: annotated visual report
-For a shareable artifact, this skill can reuse the sibling **`visual-ux-review`** report generator (`scripts/generate_report.py`) by writing a `findings.json` whose **pages = journey steps** (each step's screenshot is the page; the frictions at that step are its findings, optionally with a box around the confusing control). See that skill's `references/report-schema.md`. This gives the same interactive HTML + PDF, but as a step-by-step journey.
+### Output & optional annotated report
+The **Markdown journey report above is the complete, self-sufficient deliverable** — always produce
+it. *If* the sibling `visual-ux-review` skill is installed alongside this one, you may additionally
+reuse its report generator for a shareable HTML/PDF: write a `findings.json` whose **pages = journey
+steps** (each step's screenshot is the page; that step's frictions are its findings, optionally with
+a box around the confusing control) and run
+`python ../visual-ux-review/scripts/generate_report.py` (see that skill's `references/report-schema.md`).
+If `visual-ux-review` is **not** installed, skip the annotated report and note it — do not invent a
+different report format.
 
 ## How to Run
 
@@ -145,5 +161,5 @@ For a shareable artifact, this skill can reuse the sibling **`visual-ux-review`*
 
 - **Persona discipline is the whole game.** The moment you use app knowledge a newcomer wouldn't have, the walkthrough stops finding real friction. When unsure, assume the user is confused.
 - **Mistakes are signal, not noise.** If the obvious action is wrong, that's the most valuable finding — follow it.
-- **Bound auto-explore.** Always honor `MAX_STEPS`/`MAX_DEPTH` and de-dup visited states, and `log()` what you skipped or truncated — silent truncation reads as "covered everything" when it didn't.
+- **Bound auto-explore.** Always honor `MAX_STEPS`/`MAX_DEPTH` and de-dup visited states, and **note** what you skipped or truncated — silent truncation reads as "covered everything" when it didn't.
 - **Never confirm destructive/irreversible actions.** Stop at the confirmation and note it.
