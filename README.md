@@ -1,6 +1,6 @@
 # Visual UX Review Toolkit
 
-Adversarial **UI/UX review skills for [Claude Code](https://claude.com/claude-code)**. Point them at a running app and they review how it actually *looks* and *works* — not by reading the diff, but by driving a real browser, measuring the rendered page, and judging it as a skeptical designer and a confused first-time user would.
+Adversarial **UI/UX review skills for AI coding agents** (Claude Code, Codex, Cursor, Gemini, …). Point them at a running app and they review how it actually *looks* and *works* — not by reading the diff, but by driving a real browser, measuring the rendered page, and judging it as a skeptical designer and a confused first-time user would.
 
 Two complementary skills:
 
@@ -17,27 +17,35 @@ They're deliberately separate — a per-screen geometry critique and a click-thr
 
 ## Requirements
 
-- **Claude Code** with a browser MCP — either [Playwright MCP](https://github.com/microsoft/playwright-mcp) (preferred) or the [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp).
+- **Any agent harness with a browser MCP** exposing JS-evaluate + full-page screenshot — [Playwright MCP](https://github.com/microsoft/playwright-mcp) recommended (same one-line setup on Claude Code, Codex, Cursor, Gemini, …); the [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp) also works.
 - A **running app** reachable at a URL. Any framework, any port (Vite, Next.js/CRA, Angular, Vue/Nuxt, a deployed `https://` URL — the skills only need a URL).
 - For the **annotated reports** (optional): Python 3.8+ with [Pillow](https://pypi.org/project/Pillow/) for annotated PNGs, and Chrome or Edge for PDF export (with [reportlab](https://pypi.org/project/reportlab/) as a no-browser fallback).
 
 ## Install
 
-This repo is a Claude Code **plugin marketplace**. Install with two commands:
+### Any agent (Claude Code, Codex, Cursor, Gemini, OpenCode, …)
+
+```text
+npx skills add averliz/visual-ux-review-toolkit
+```
+
+Installs both skills via the open [`npx skills`](https://github.com/vercel-labs/skills) tool. Add
+`--skill visual-ux-review` (or `ux-flow-walkthrough`) to install just one. Tested with `skills`
+1.5.13.
+
+### Claude Code plugin (native slash commands + marketplace)
 
 ```text
 /plugin marketplace add averliz/visual-ux-review-toolkit
 /plugin install ui-ux-review@visual-ux-review-toolkit
 ```
 
-**Try it locally first**, before pushing — point the marketplace at the local folder:
+Either way, invoke by name (`visual-ux-review`, `ux-flow-walkthrough`) or just describe what you want.
 
-```text
-/plugin marketplace add /absolute/path/to/visual-ux-review-toolkit
-/plugin install ui-ux-review@visual-ux-review-toolkit
-```
-
-Both skills are then available; invoke them by name (`/visual-ux-review`, `/ux-flow-walkthrough`) or just describe what you want.
+> **Requires a browser driver.** The skills measure a live page via a browser tool — Playwright MCP
+> recommended (`npx @playwright/mcp@latest`), Chrome DevTools MCP also works. With no driver they
+> stop and tell you how to enable one; they never fabricate measurements. See each skill's
+> `references/browser-tools.md`.
 
 ## Usage
 
@@ -50,7 +58,7 @@ review the UI of /settings on localhost:3000 — the buttons feel too small on m
 It captures 5 breakpoints, measures geometry, runs the checks, critiques the screenshots, and offers an annotated report. Point it at a PR and it reviews just the changed screens:
 
 ```text
-run /visual-ux-review on the screens PR #42 changed
+review the screens PR #42 changed
 ```
 
 ### Naive-user flow walkthrough
@@ -71,10 +79,10 @@ do a full auto-explore of the app — try every flow, mis-submit forms, hit back
 Both are built to slot into a review chain after code review — where code review can't see spatial/journey problems:
 
 ```text
-For PR #42: run /simplify, then /code-review and fix issues,
-then /visual-ux-review and address findings,
-then /ux-flow-walkthrough on the main flow,
-then test the e2e flow with Playwright.
+For PR #42: run your cleanup and simplify pass, then your code review and fix issues,
+then visual-ux-review and address findings,
+then ux-flow-walkthrough on the main flow,
+then test the e2e flow.
 ```
 
 ## Reports
@@ -98,10 +106,14 @@ See [`skills/visual-ux-review/references/report-schema.md`](skills/visual-ux-rev
 - **Mechanical + perceptual.** Geometry, font sizes, overflow, and layout-shift are measured deterministically; the subjective "does this look/feel right" is a vision/persona pass on top.
 - **Adversarial by default.** `visual-ux-review` assumes every pixel is suspect; `ux-flow-walkthrough` assumes the user is confused. That's where the real findings come from.
 
-## Compatibility & roadmap
+## Compatibility
 
-- **v0.1 — Claude Code only.** Plugins are a Claude Code construct, and the skills drive Claude Code's browser MCPs.
-- The `SKILL.md` files are plain markdown and portable; **other harnesses** (Codex, Gemini, Copilot, …) are planned for a later iteration.
+- **Harness-agnostic.** Installable on any agent via `npx skills`; the skill bodies are written in a
+  neutral browser-**capability** vocabulary (navigate / set-viewport / evaluate-js / screenshot /
+  accessibility-snapshot / click) mapped per harness in each skill's `references/browser-tools.md`.
+- **Driver:** Playwright MCP recommended (works the same on every harness); Chrome DevTools MCP
+  mappings are best-effort. No driver ⇒ the skill stops cleanly rather than guessing.
+- The Claude Code plugin path remains for native slash commands.
 
 ## License
 

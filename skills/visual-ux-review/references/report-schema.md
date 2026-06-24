@@ -76,6 +76,7 @@ For multi-page, `url`, `screenshots`, and `findings` move inside each `pages[]` 
 | `url` | yes | Page reviewed (per page in multi-page form) |
 | `verdict` | no | Auto-derived from findings; provide only to override (`SHIP` / `SHIP WITH FIXES` / `BLOCK`) |
 | `summary` | no | Auto-derived counts per severity |
+| `driver` | no | The browser tool used for measurement (e.g. `playwright-mcp`); rendered in the report header for provenance. Omit if unknown |
 | `pages[]` | multi-page | Array of `{name, url, screenshots, findings}`; omit for single-page |
 | `pages[].name` | yes (multi) | Page label shown in the switcher; also the asset filename slug |
 | `screenshots` | yes | Map of breakpoint (string) → PNG filename, relative to `--screenshots-dir` |
